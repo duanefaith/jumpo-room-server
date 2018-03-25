@@ -49,6 +49,8 @@ Player.prototype.getPhoto = function () {
 };
 
 Player.prototype.destroy = function () {
+  this.events.emit(Events.EVENT_DESTORY, this);
+  this.events.removeAllListeners(Events.EVENT_DESTORY);
   this.events.removeAllListeners(Events.EVENT_PROPERTY_CHANGED);
 };
 
@@ -87,18 +89,6 @@ Player.prototype.toObj = function () {
     obj.roomId = this.room.getId();
   }
   return obj;
-};
-
-Player.prototype.isWandering = function () {
-  return this.room == null;
-};
-
-Player.prototype.isPending = function () {
-  return this.room != null && this.room.isPending();
-};
-
-Player.prototype.isPlaying = function () {
-  return this.room != null && this.room.isPlaying();
 };
 
 module.exports = Player;

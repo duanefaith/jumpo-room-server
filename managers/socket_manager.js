@@ -2,14 +2,30 @@ var https = require('https');
 var WebSocket = require('ws');
 var ServerError = require('../utils/server_error');
 var CommonError = require('../constants/error_constants').COMMON;
+const RespConstants = require('../constants/resp_constants');
 
 function SocketManager() {
-  this.pendingClients = [];
+  this.clients = {};
   this.msgHandlers = {};
   WebSocket.prototype.sendObj = function (obj) {
     if (obj) {
-      this.send(JSON.stringify(obj));
+      try {
+        if (this.readyState === WebSocket.OPEN) {
+          this.send(JSON.stringify(obj));
+        } else {
+          console.warn('state invalid in ' + this.readyState + ', sending ' + JSON.stringify(obj) + ' abort');
+        }
+      } catch (error) {
+        console.warn(error);
+      }
     }
+  };
+  WebSocket.prototype.sendResp = function (req, obj) {
+    this.sendObj({
+      type: RespConstants.RESP_TYPE_NORMAL,
+      req: req,
+      result: obj
+    })
   };
 }
 
@@ -32,16 +48,15 @@ SocketManager.prototype.start = function (port, options) {
     console.log('listenning port ' + self.port);
   });
   this.serverSocket.on('connection', function(ws, req) {
-    self.pendingClients.push(ws);
     ws.on('message', function (msg) {
       var req;
       try {
         req = JSON.parse(msg);
       } catch (error) {
-        console.log(error);
+        console.warn(error);
       }
       if (!req || !req.hasOwnProperty('type')) {
-        ws.sendObj({
+        this.sendResp(req, {
           error: {
             code: 1,
             msg: 'invalid request'
@@ -50,7 +65,7 @@ SocketManager.prototype.start = function (port, options) {
         return;
       }
       if (!self.msgHandlers.hasOwnProperty(req.type)) {
-        ws.sendObj({
+        this.sendResp(req, {
           error: {
             code: 1,
             msg: 'unknown request'
@@ -59,27 +74,89 @@ SocketManager.prototype.start = function (port, options) {
         return;
       }
       try {
-        self.msgHandlers[req.type](ws, req.data);
+        self.msgHandlers[req.type](this, req.data, req);
       } catch (error) {
         if (error instanceof ServerError) {
-          console.log(error.code + ':' + error.msg);
-          ws.sendObj({
+          console.warn(error.code + ':' + error.msg);
+          this.sendResp(req, {
             error: {
               code: error.code,
               msg: error.msg
             }
           });
         } else {
-          console.log(error);
-          ws.sendObj({
+          console.warn(error);
+          this.sendResp(req, {
             error: {
               code: CommonError.INTERNAL_ERROR,
-              msg: error.msg
+              msg: error
             }
           });
         }
       }
     });
+
+    ws.on('close', function (code, reason) {
+      var key;
+      var allKeys = Object.keys(self.clients);
+      for (var i = 0; i < allKeys.length; i ++) {
+        if (self.clients[allKeys[i]] === this) {
+          key = allKeys[i];
+          break;
+        }
+      }
+      if (key) {
+        delete self.clients[key];
+      }
+    });
+  });
+};
+
+SocketManager.prototype.associate = function (player, ws) {
+  if (player && ws) {
+    var oldWs = this.clients[player.getId()];
+    if (oldWs) {
+      if (oldWs !== ws) {
+        oldWs.close();
+      }
+    }
+    this.clients[player.getId()] = ws;
+  }
+};
+
+SocketManager.prototype.disAssociate = function (player) {
+  if (player) {
+    var ws = this.clients[player.getId()];
+    if (ws) {
+      ws.close();
+    }
+    delete this.clients[player.getId()];
+  }
+};
+
+SocketManager.prototype.broadcastToPlayers = function (players, msgObj) {
+  var self = this;
+  players.forEach(function (player) {
+    var ws = self.clients[player.getId()];
+    if (ws) {
+      ws.sendObj({
+        type: RespConstants.RESP_TYPE_PUSH,
+        data: msgObj
+      });
+    }
+  });
+};
+
+SocketManager.prototype.broadcastToPlayerIds = function (playerIds, msgObj) {
+  var self = this;
+  playerIds.forEach(function (playerId) {
+    var ws = self.clients[playerId];
+    if (ws) {
+      ws.sendObj({
+        type: RespConstants.RESP_TYPE_PUSH,
+        data: msgObj
+      });
+    }
   });
 };
 

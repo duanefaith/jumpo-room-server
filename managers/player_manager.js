@@ -1,4 +1,5 @@
 const Events = require('../constants/event_constants');
+const SocketManager = require('./socket_manager');
 
 function PlayerManager() {
   this.players = {};
@@ -25,9 +26,23 @@ PlayerManager.prototype.addOrGetPlayer = function (player) {
         + (currentValue ? currentValue.getId() : null));
     }
   });
+  var self = this;
+  player.getEvents().on(Events.EVENT_DESTORY, function (target) {
+    if (target) {
+      SocketManager.getInstance().disAssociate(target);
+      delete self.players[target.getId()];
+    }
+  });
   return player;
 };
 
+PlayerManager.prototype.removePlayer = function (player) {
+  if (player == null) {
+    return;
+  }
+  delete this.players[player.getId()];
+};
+  
 module.exports = function () {
   var instance;
   return {
