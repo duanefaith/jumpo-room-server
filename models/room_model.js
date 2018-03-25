@@ -27,7 +27,7 @@ Room.prototype.hasPlayer = function (player) {
 };
 
 Room.prototype.addPlayer = function (player) {
-  if (this.hasPlayer(playerId)) {
+  if (this.hasPlayer(player)) {
     return false;
   }
   this.players[player.getId()] = player;
@@ -54,6 +54,27 @@ Room.prototype.isPending = function () {
 
 Room.prototype.isPlaying = function () {
   return this.state == Room.STATE_PLAYING;
+};
+
+Room.prototype.toObj = function () {
+  var obj = {};
+  if (this.id) {
+    obj.id = this.id;
+  }
+  if (this.creator) {
+    obj.creator = this.creator.toObj();
+  }
+  if (this.players) {
+    obj.players = {};
+    var self = this;
+    Object.keys(this.players).forEach(function (key) {
+      obj.players[key] = self.players[key].toObj();
+    });
+  }
+  if (this.state) {
+    obj.state = this.state;
+  }
+  return obj;
 };
 
 module.exports = Room;

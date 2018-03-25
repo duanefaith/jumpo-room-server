@@ -1,5 +1,7 @@
 var https = require('https');
 var WebSocket = require('ws');
+var ServerError = require('../utils/server_error');
+var CommonError = require('../constants/error_constants').COMMON;
 
 function SocketManager() {
   this.pendingClients = [];
@@ -59,7 +61,23 @@ SocketManager.prototype.start = function (port, options) {
       try {
         self.msgHandlers[req.type](ws, req.data);
       } catch (error) {
-        console.log(error);
+        if (error instanceof ServerError) {
+          console.log(error.code + ':' + error.msg);
+          ws.sendObj({
+            error: {
+              code: error.code,
+              msg: error.msg
+            }
+          });
+        } else {
+          console.log(error);
+          ws.sendObj({
+            error: {
+              code: CommonError.INTERNAL_ERROR,
+              msg: error.msg
+            }
+          });
+        }
       }
     });
   });

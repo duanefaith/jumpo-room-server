@@ -1,5 +1,6 @@
 const EventEmitter = require('events').EventEmitter;
 const Events = require('../constants/event_constants');
+const RoomManager = require('../managers/room_manager');
 
 function Player(id) {
   this.id = id;
@@ -60,9 +61,32 @@ Player.createFromObj = function (obj) {
     if (obj.hasOwnProperty('photo')) {
       player.setPhoto(obj.photo);
     }
+    if (obj.hasOwnProperty('roomId')) {
+      var room = RoomManager.getInstance().findRoom(obj.roomId);
+      if (room) {
+        player.setRoom(room);
+      }
+    }
     return player;
   }
   return null;
+};
+
+Player.prototype.toObj = function () {
+  var obj = {};
+  if (this.id) {
+    obj.id = this.id;
+  }
+  if (this.name) {
+    obj.name = this.name;
+  }
+  if (this.photo) {
+    obj.photo = this.photo;
+  }
+  if (this.room) {
+    obj.roomId = this.room.getId();
+  }
+  return obj;
 };
 
 Player.prototype.isWandering = function () {

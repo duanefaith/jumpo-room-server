@@ -40,6 +40,10 @@ RoomManager.prototype.joinRoom = function (roomId, playerObj) {
   throw new ServerError(RoomErrors.CREATE.ROOM_NOT_FOUND, 'room not exists');
 };
 
+RoomManager.prototype.findRoom = function (roomId) {
+  return this.pendingRooms[roomId];
+};
+
 module.exports = function () {
   var instance;
   return {
