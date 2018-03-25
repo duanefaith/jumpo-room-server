@@ -1,0 +1,9 @@
+bin
+build
+build-ant
+*.class
+*.iml
+.idea
+captures
+.DS_Store
+node_modules

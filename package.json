@@ -1,0 +1,14 @@
+{
+  "name": "jumpo-server",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node ./bin/www"
+  },
+  "dependencies": {
+    "amqplib": "^0.5.2",
+    "debug": "~2.6.9",
+    "uuid": "^3.2.1",
+    "ws": "^5.1.0"
+  }
+}
