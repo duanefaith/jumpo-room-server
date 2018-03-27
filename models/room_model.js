@@ -28,7 +28,7 @@ Room.prototype.getCreator = function () {
 };
 
 Room.prototype.setCreator = function (creator) {
-  let oldCreator = this.creator;
+  var oldCreator = this.creator;
   this.creator = creator;
   this.events.emit(Events.EVENT_PROPERTY_CHANGED, this, 'creator', oldCreator, this.creator);
 };

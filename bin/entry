@@ -1,0 +1,76 @@
+#!/usr/bin/env node
+
+/**
+ * Module dependencies.
+ */
+(function () {
+  function formatDate() {
+    var current = new Date();
+    return current.getFullYear() + '-' + current.getMonth() + '-' + current.getDate()
+      + ' ' + current.getHours() + ':' + current.getMinutes() + ':' + current.getSeconds() + ':' + current.getMilliseconds();
+  }
+
+  var oldLog = console.log;
+  console.log = function (msg) {
+    oldLog(formatDate() + ' ' + msg);
+  };
+
+  var oldWarn = console.warn;
+  console.warn = function (msg) {
+    oldWarn(formatDate() + ' ' + msg);
+  };
+
+  var oldInfo = console.info;
+  console.info = function (msg) {
+    oldInfo(formatDate() + ' ' + msg);
+  };
+
+  var oldError = console.error;
+  console.error = function (msg) {
+    oldError(formatDate() + ' ' + msg);
+  };
+
+  var oldAssert = console.assert;
+  console.assert = function (msg) {
+    oldAssert(formatDate() + ' ' + msg);
+  };
+}) ();
+
+var ConfigManager = require('../config_manager');
+var AmqpManager = require('../managers/amqp_manager');
+var SocketManager = require('../managers/socket_manager');
+
+var configs = ConfigManager.getInstance().getConfigs();
+
+AmqpManager.getInstance().connect(configs.amqp.address);
+
+var port = normalizePort(process.env.PORT || '3000');
+var options = null;
+if (configs.certs) {
+  options = {
+    key: ConfigManager.getInstance().readRelativeFileSync(configs.certs.key),
+    cert: ConfigManager.getInstance().readRelativeFileSync(configs.certs.cert)
+  };
+}
+SocketManager.getInstance().addHandler(require('../handlers/room_handler'));
+SocketManager.getInstance().start(port, options);
+
+/**
+ * Normalize a port into a number, string, or false.
+ */
+
+function normalizePort(val) {
+  var port = parseInt(val, 10);
+
+  if (isNaN(port)) {
+    // named pipe
+    return val;
+  }
+
+  if (port >= 0) {
+    // port number
+    return port;
+  }
+
+  return false;
+}

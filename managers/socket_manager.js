@@ -1,4 +1,3 @@
-var https = require('https');
 var WebSocket = require('ws');
 var ServerError = require('../utils/server_error');
 var CommonError = require('../constants/error_constants').COMMON;
@@ -36,11 +35,17 @@ SocketManager.prototype.addHandler = function(handler) {
   });
 };
 
-SocketManager.prototype.start = function (port, options) {
+SocketManager.prototype.start = function (port, options = null) {
   if (!this.serverSocket) {
     this.port = port;
     this.options = options;
-    this.server = https.createServer(this.options);
+    if (this.options) {
+      var https = require('https');
+      this.server = https.createServer(this.options);
+    } else {
+      var http = require('http');
+      this.server = http.createServer();
+    }
     this.serverSocket = new WebSocket.Server({ server: this.server })
   }
   var self = this;

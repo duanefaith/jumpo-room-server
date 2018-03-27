@@ -41,6 +41,13 @@ RoomManager.prototype.createRoom = function (creatorObj) {
       if (!currentValue) {
         room.destroy();
       }
+    } else if (property == 'state') {
+      if (currentValue === Room.STATE_PENDING) {
+        SocketManager.getInstance().broadcastToPlayers(target.getPlayers(), {
+          event: 'room_state_changed',
+          room: target.toObj()
+        });
+      }
     }
   });
   var self = this;
@@ -65,6 +72,9 @@ RoomManager.prototype.joinRoom = function (roomId, playerObj) {
     var room = this.waitingRooms[roomId];
     if (room.state !== Room.STATE_WAITING) {
       throw new ServerError(RoomErrors.ROOM_STATE_INVALID, 'room state invalid');
+    }
+    if (room.getPlayers().length >= 2) {
+      throw new ServerError(RoomErrors.JOIN.TOO_MANY_PLAYERS, "players too many");
     }
     if (!room.addPlayer(player)) {
       throw new ServerError(RoomErrors.JOIN.PLAYER_ALREADY_IN, 'player already in room');
@@ -115,6 +125,9 @@ RoomManager.prototype.startGame = function (roomId, playerId) {
     }
     if (room.getCreator().getId() != playerId) {
       throw new ServerError(RoomErrors.START_GAME.NO_AUTH, 'no auth to start game');
+    }
+    if (room.getPlayers().length <= 1) {
+      throw new ServerError(RoomErrors.START_GAME.TOO_FEW_PLAYERS, 'players too few');
     }
     delete this.waitingRooms[roomId];
     this.pendingRooms[roomId] = room;

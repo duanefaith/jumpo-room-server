@@ -1,6 +1,5 @@
 var amqp = require('amqplib');
 var co = require('co');
-var amqpConfig = require('../configs.json').amqp;
 var ServerError = require('../utils/server_error');
 var CommonError = require('../constants/error_constants').COMMON;
 
@@ -8,10 +7,10 @@ function AmqpManager() {
   this.connection = null;
 }
 
-AmqpManager.prototype.connect = function () {
+AmqpManager.prototype.connect = function (address) {
   var self = this;
   co(function *() {
-    self.connection = yield amqp.connect(amqpConfig.address);
+    self.connection = yield amqp.connect(address);
   }).catch(function (error) {
     console.log(error);
   });
