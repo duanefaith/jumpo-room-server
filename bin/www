@@ -12,8 +12,8 @@ AmqpManager.getInstance().connect();
 
 var port = normalizePort(process.env.PORT || '3000');
 const options = {
-  key: fs.readFileSync('certs/key.pem'),
-  cert: fs.readFileSync('certs/cert.pem')
+  key: fs.readFileSync('certs/ca.key'),
+  cert: fs.readFileSync('certs/3c20cfc256e0b8d6.crt')
 };
 SocketManager.getInstance().addHandler(require('../handlers/room_handler'));
 SocketManager.getInstance().start(port, options);

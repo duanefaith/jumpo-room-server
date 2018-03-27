@@ -1,6 +1,6 @@
 var amqp = require('amqplib');
 var co = require('co');
-var amqpConfig = require('../configs/amqp_config.json');
+var amqpConfig = require('../configs.json').amqp;
 var ServerError = require('../utils/server_error');
 var CommonError = require('../constants/error_constants').COMMON;
 

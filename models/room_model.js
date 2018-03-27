@@ -23,6 +23,16 @@ Room.prototype.getId = function () {
   return this.id;
 };
 
+Room.prototype.getCreator = function () {
+  return this.creator;
+};
+
+Room.prototype.setCreator = function (creator) {
+  let oldCreator = this.creator;
+  this.creator = creator;
+  this.events.emit(Events.EVENT_PROPERTY_CHANGED, this, 'creator', oldCreator, this.creator);
+};
+
 Room.prototype.hasPlayerId = function (playerId) {
   return this.players.hasOwnProperty(playerId);
 };

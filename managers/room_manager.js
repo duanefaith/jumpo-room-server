@@ -9,6 +9,7 @@ const SocketManager = require('./socket_manager');
 
 function RoomManager() {
   this.waitingRooms = {};
+  this.pendingRooms = {};
 }
 
 RoomManager.prototype.createRoom = function (creatorObj) {
@@ -35,6 +36,10 @@ RoomManager.prototype.createRoom = function (creatorObj) {
             });
           }
         }
+      }
+    } else if (property == 'creator') {
+      if (!currentValue) {
+        room.destroy();
       }
     }
   });
@@ -69,6 +74,9 @@ RoomManager.prototype.joinRoom = function (roomId, playerObj) {
       player: player
     };
   }
+  if (this.pendingRooms.hasOwnProperty(roomId)) {
+    throw new ServerError(RoomErrors.ROOM_IS_PENDING, 'room has started a game');
+  }
   throw new ServerError(RoomErrors.ROOM_NOT_FOUND, 'room not exists');
 };
 
@@ -86,7 +94,35 @@ RoomManager.prototype.quitRoom = function (roomId, playerId) {
     if (!room.removePlayerId(playerId)) {
       throw new ServerError(RoomErrors.QUIT.PLAYER_NOT_IN, 'player not in room');
     }
+    if (playerId == room.getCreator().getId()) {
+      var players = room.getPlayers();
+      if (players.length > 0) {
+        room.setCreator(players[0]);
+      } else {
+        room.setCreator(null);
+      }
+    }
     return;
+  }
+  throw new ServerError(RoomErrors.ROOM_NOT_FOUND, 'room not exists');
+};
+
+RoomManager.prototype.startGame = function (roomId, playerId) {
+  if (this.waitingRooms.hasOwnProperty(roomId)) {
+    var room = this.waitingRooms[roomId];
+    if (room.getState() !== Room.STATE_WAITING) {
+      throw new ServerError(RoomErrors.ROOM_STATE_INVALID, 'room state invalid');
+    }
+    if (room.getCreator().getId() != playerId) {
+      throw new ServerError(RoomErrors.START_GAME.NO_AUTH, 'no auth to start game');
+    }
+    delete this.waitingRooms[roomId];
+    this.pendingRooms[roomId] = room;
+    room.setState(Room.STATE_PENDING);
+    return;
+  }
+  if (this.pendingRooms.hasOwnProperty(roomId)) {
+    throw new ServerError(RoomErrors.ROOM_IS_PENDING, 'room has started a game');
   }
   throw new ServerError(RoomErrors.ROOM_NOT_FOUND, 'room not exists');
 };

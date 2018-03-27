@@ -33,4 +33,13 @@ module.exports = {
     RoomManager.getInstance().quitRoom(data.roomId, data.playerId);
     ws.sendResp(req, {success: true});
   },
+  'room.gamestart': function (ws, data, req) {
+    if (!data.hasOwnProperty('roomId')) {
+      throw new ServerError(CommonError.INTERNAL_ERROR, 'missing roomId parameter');
+    }
+    if (!data.hasOwnProperty('playerId')) {
+      throw new ServerError(CommonError.INTERNAL_ERROR, 'missing playerId parameter');
+    }
+    RoomManager.getInstance().startGame(data.roomId, data.playerId);
+  },
 };
